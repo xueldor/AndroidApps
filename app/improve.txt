@@ -1,0 +1,4 @@
+后续改进：
+1、交互体验优化，界面优化，代码结构优化，Material Design
+2、通过HanderThread将耗时操作放到子线程，比如查询已安装的app有可能耗时十几秒
+3、添加点击查看此app详情，如启动器，enable/disable状态，所有者等

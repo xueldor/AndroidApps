@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<device-admin>
+    <!-- 申请的设备管理员权限 -->
+    <uses-policies>
+
+    </uses-policies>
+
+</device-admin>
