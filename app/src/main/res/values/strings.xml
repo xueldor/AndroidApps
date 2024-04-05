@@ -1,5 +1,0 @@
-<resources>
-    <string name="app_name">AppPeace</string>
-    <string name="set_owner_command">dpm set-device-owner com.xue.peace/.MyPolicyReceiver</string>
-    <string name="cancel_owner_command">dpm remove-active-admin com.xue.peace/.MyPolicyReceiver</string>
-</resources>

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.xue.position">
+
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.NETWORK_MANAGED_PROVISIONING"/>
+
+    <application android:label="@string/app_name">
+        <uses-library android:name="com.android.location.provider" />
+        <!--    此处应该向百度申请证书。测试发现，没有证书的情况下可以首次获取，后续全部返回505。
+        但是发现，只要每次都构造一个新的LocationClient对象，就可以每次获取定位了
+        利用这个漏洞的缺点是，setScanSpan只能传0，即使传其它>1000的数，也只有首次返回坐标，后面每隔>1000ms返回一个505
+        原生接口中的间隔多少时间定位一次功能不好用了-->
+        <!--        <meta-data-->
+        <!--            android:name="com.baidu.lbsapi.API_KEY"-->
+        <!--            android:value="xxxx" />-->
+<!--        <service android:name="com.baidu.location.f" android:enabled="true" android:process=":remote"> </service>-->
+
+        <service
+            android:name=".XueLocationService"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.android.location.service.v3.NetworkLocationProvider"/>
+                <action android:name="com.android.location.service.v2.NetworkLocationProvider"/>
+                <action android:name="com.baidu.bms.location.BaiduNetworkLocationProvider"/>
+                <action android:name="com.google.android.location.NetworkLocationProvider"/>
+                <action android:name="com.android.location.service.NetworkLocationProvider"/>
+            </intent-filter>
+        </service>
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.TestXueNLP" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>
