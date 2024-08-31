@@ -5,6 +5,9 @@ import androidx.lifecycle.ViewModelProviders;
 import android.app.admin.DevicePolicyManager;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Bundle;
 
@@ -27,6 +30,7 @@ import android.widget.Toast;
 
 import com.xue.peace.AppInfoBean;
 import com.xue.peace.DetailDialog;
+import com.xue.peace.MainActivity;
 import com.xue.peace.MyPolicyReceiver;
 import com.xue.peace.R;
 import com.xue.peace.SwipeView;
@@ -47,11 +51,28 @@ public class MainFragment extends Fragment implements RadioGroup.OnCheckedChange
     DevicePolicyManager dpm;
     ComponentName dpmCompName;
 
+    public final static int HIDE = 1;
+    public final static int DISABLE = 2;
+    public final static int SUSPEND = 3;
+
+    private int mMode;
+
     private List<AppInfoBean> userApps = new ArrayList<>();
     private List<AppInfoBean> systemApps = new ArrayList<>();
 
     public static MainFragment newInstance() {
         return new MainFragment();
+    }
+
+    public void setMode(int mode) {
+        mMode = mode;
+        if (mViewModel != null) {
+            mViewModel.setMode(mode);
+        }
+        RecyclerView.Adapter adapterUser = mUserApkListView.getAdapter();
+        if (adapterUser != null) adapterUser.notifyDataSetChanged();
+        RecyclerView.Adapter adapterSystem = mSystemApkListView.getAdapter();
+        if (adapterSystem != null) adapterSystem.notifyDataSetChanged();
     }
 
     @Nullable
@@ -81,6 +102,7 @@ public class MainFragment extends Fragment implements RadioGroup.OnCheckedChange
         mSystemApkListView.setLayoutManager(sysManager);
 
         mViewModel = ViewModelProviders.of(this).get(MainViewModel.class);
+        mViewModel.setMode(mMode);
         mViewModel.getAllApps(getActivity().getApplicationContext(),userApps,systemApps);
 
         AppInfoAdapter userAdapter = new AppInfoAdapter();
@@ -115,7 +137,8 @@ public class MainFragment extends Fragment implements RadioGroup.OnCheckedChange
         ImageView iconIV;
         ImageButton button;
 
-        boolean isAppHide = false;
+        // 应用是否冻结住。包括hide、disable、suspend等。
+        boolean isAppFreeze = false;
 
         public AppInfoHolder(View itemView) {
             super(itemView);
@@ -143,41 +166,84 @@ public class MainFragment extends Fragment implements RadioGroup.OnCheckedChange
                     Toast.makeText(getActivity(),"My self,disable this action",Toast.LENGTH_SHORT).show();
                     return;
                 }
-                //设置为disable状态,需要system权限
-//                PackageManager pm = getActivity().getPackageManager();
-//                try {
-//                    pm.setApplicationEnabledSetting(packageName, PackageManager.COMPONENT_ENABLED_STATE_DISABLED_USER,
-//                            0);
-//                }catch (Exception e){
-//                    e.printStackTrace();
-//                }
-                //hide此应用
-                boolean result = dpm.setApplicationHidden(dpmCompName, mInfo.getAppPackageName(), !isAppHide);
-                if(result){
-                    updateDisplay();
-                }else {
-                    Toast.makeText(getActivity(),"This app can't be hide",Toast.LENGTH_SHORT).show();
+
+                if (mMode == HIDE) {
+                    //hide此应用
+                    if (mViewModel.isDeviceOwner()) {
+                        boolean result = dpm.setApplicationHidden(dpmCompName, mInfo.getAppPackageName(), !isAppFreeze);
+                        if (result) {
+                            updateDisplay();
+                        } else {
+                            Toast.makeText(getActivity(), "This app can't be hide", Toast.LENGTH_SHORT).show();
+                        }
+                    }else {
+                        Toast.makeText(getActivity(), R.string.dpm_permission_warning, Toast.LENGTH_SHORT).show();
+                    }
+                } else if (mMode == DISABLE) {
+                    //设置disable状态,需要system权限
+                    int flag = isAppFreeze? PackageManager.COMPONENT_ENABLED_STATE_ENABLED:PackageManager.COMPONENT_ENABLED_STATE_DISABLED_USER;
+                    PackageManager pm = getActivity().getPackageManager();
+                    try {
+                        pm.setApplicationEnabledSetting(mInfo.getAppPackageName(), flag,0);
+                        updateDisplay();
+                    }catch (Exception e){
+                        e.printStackTrace();
+                        Toast.makeText(getActivity(), "没有disable权限", Toast.LENGTH_SHORT).show();
+                    }
+                } else if (mMode == SUSPEND) {
+                    PackageManager pm = getActivity().getPackageManager();
+                    try {
+                        String[] pkgs = new String[] {mInfo.getAppPackageName()};
+                        pm.setPackagesSuspended(pkgs, !isAppFreeze, null,null,null);
+                        updateDisplay();
+                    }catch (Exception e){
+                        e.printStackTrace();
+                        Toast.makeText(getActivity(), "没有suspend权限", Toast.LENGTH_SHORT).show();
+                    }
                 }
+                mViewModel.updateAppInfoBean(getActivity(), mInfo);
             }else if(v == mSwipeView){
                 if(mDetailDialog == null){
                     mDetailDialog = new DetailDialog(getActivity());
                 }
+                mDetailDialog.setMvm(mViewModel);
                 mDetailDialog.show();
                 mDetailDialog.loadDetailData(mInfo);
             }
         }
 
         void updateDisplay(){
-            if(dpm.isApplicationHidden(dpmCompName,mInfo.getAppPackageName())){
+            mViewModel.updateAppInfoBean(getActivity(), mInfo);
+            if (mMode == HIDE) {
+                if (mInfo.isHide() != null) {
+                    if (mInfo.isHide()) {
+                        isAppFreeze = true;
+                    } else {
+                        itemView.setBackgroundColor(Color.TRANSPARENT);
+                        button.setBackgroundResource(R.drawable.iv_use);
+                        isAppFreeze = false;
+                    }
+                }
+            } else if (mMode == DISABLE) {
+                if (mInfo.isDisable()) {
+                    isAppFreeze = true;
+                } else{
+                    isAppFreeze = false;
+                }
+            } else if (mMode == SUSPEND) {
+                if (mInfo.isSuspend()) {
+                    isAppFreeze = true;
+                } else{
+                    isAppFreeze = false;
+                }
+            }
+            if (isAppFreeze) {
                 itemView.setBackgroundColor(Color.GRAY);
                 button.setBackgroundResource(R.drawable.iv_dis_use);
-                mInfo.setHide(true);
-                isAppHide = true;
-            }else{
+
+            } else {
                 itemView.setBackgroundColor(Color.TRANSPARENT);
                 button.setBackgroundResource(R.drawable.iv_use);
-                mInfo.setHide(false);
-                isAppHide = false;
             }
         }
     }

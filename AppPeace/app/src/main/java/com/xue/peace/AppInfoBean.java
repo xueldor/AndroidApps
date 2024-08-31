@@ -10,8 +10,9 @@ public class AppInfoBean {
     private PackageInfo packageInfo;
     private ApplicationInfo applicationInfo;
     private String appPackageName;
-    private boolean isHide;
+    private Boolean isHide;
     private boolean isDisable;
+    private boolean isSuspend;
     private int appUid;
 
     public String getAppName() {
@@ -54,11 +55,11 @@ public class AppInfoBean {
         this.appPackageName = appPackageName;
     }
 
-    public boolean isHide() {
+    public Boolean isHide() {
         return isHide;
     }
 
-    public void setHide(boolean hide) {
+    public void setHide(Boolean hide) {
         isHide = hide;
     }
 
@@ -68,6 +69,14 @@ public class AppInfoBean {
 
     public void setDisable(boolean disable) {
         isDisable = disable;
+    }
+
+    public boolean isSuspend() {
+        return isSuspend;
+    }
+
+    public void setSuspend(boolean suspend) {
+        isSuspend = suspend;
     }
 
     public int getAppUid() {

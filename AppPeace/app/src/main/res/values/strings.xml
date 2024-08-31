@@ -2,4 +2,6 @@
     <string name="app_name">AppPeace</string>
     <string name="set_owner_command">dpm set-device-owner com.xue.peace/.MyPolicyReceiver</string>
     <string name="cancel_owner_command">dpm remove-active-admin com.xue.peace/.MyPolicyReceiver</string>
+
+    <string name="dpm_permission_warning">缺少权限。\nUse \'adb shell dpm set-device-owner com.xue.peace/.MyPolicyReceiver\' to set this app as device owner</string>
 </resources>

@@ -5,11 +5,24 @@ android {
     buildToolsVersion "29.0.2"
     defaultConfig {
         applicationId "com.xue.peace"
-        minSdkVersion 23
+        minSdkVersion 28
         targetSdkVersion 29
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+//    gradle.projectsEvaluated {
+//        tasks.withType(JavaCompile) {
+//            options.compilerArgs.add('-Xbootclasspath/p:sdk/framework.jar')
+//        }
+//    }
+    signingConfigs {
+        debug {
+            storeFile file('../keystore/platform.jks')
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
+            storePassword 'android'
+        }
     }
     buildTypes {
         release {
@@ -17,9 +30,28 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+    preBuild {
+        //此处文件名根据实际情况修改：
+        def imlpath = "../.idea/modules/app/" + rootProject.name + "." + project.name + ".main.iml"
+        println imlpath
+        def imlFile = file(imlpath)
+        try {
+            def parsedXml = (new XmlParser()).parse(imlFile)
+            def jdkNode = parsedXml.component[1].orderEntry.find { it.'@type' == 'jdk' }
+            parsedXml.component[1].remove(jdkNode)
+            def sdkString = "Android API " + android.compileSdkVersion.substring("android-".length()) + " Platform"
+            new Node(parsedXml.component[1], 'orderEntry', ['type': 'jdk', 'jdkName': sdkString, 'jdkType': 'Android SDK'])
+            groovy.xml.XmlUtil.serialize(parsedXml, new FileOutputStream(imlFile))
+        } catch (FileNotFoundException e) {
+            // nop, iml not found
+            println "no iml found"
+        }
+    }
 }
 
 dependencies {
+    compileOnly files('../sdk/framework.jar')
+
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation 'androidx.appcompat:appcompat:1.1.0'
     implementation 'androidx.constraintlayout:constraintlayout:1.1.3'

@@ -20,6 +20,24 @@ allprojects {
         jcenter()
         
     }
+//        gradle.projectsEvaluated {
+//            tasks.withType(JavaCompile) {
+//                //../framework.jar 为相对位置，需要参照着修改
+//                options.compilerArgs.add('-Xbootclasspath/p:sdk/framework.jar')
+//            }
+//        }
+        gradle.projectsEvaluated {
+            tasks.withType(JavaCompile) {
+                Set<File> fileSet = options.bootstrapClasspath.getFiles()
+                List<File> newFileList =  new ArrayList<>();
+                //"../framework.jar" 为相对位置，需要参照着修改
+                newFileList.add(new File("sdk/framework.jar"))
+                newFileList.addAll(fileSet)
+                options.bootstrapClasspath = files(
+                        newFileList.toArray()
+                )
+            }
+        }
 }
 
 task clean(type: Delete) {
